@@ -8,8 +8,7 @@ import (
 
 func main() {
 	start := time.Now()
-	requests := make(chan helloRequest)
-	go helloBroker(requests)
+	requests := helloBroker()
 	lotsOfHelloClients(requests)
 	close(requests)
 	elapsed := time.Since(start)
@@ -43,10 +42,14 @@ func helloClient(id int, requests chan helloRequest) {
 	fmt.Println(<-request.response)
 }
 
-func helloBroker(requests chan helloRequest) {
-	for i := 0; i < 1000; i++ {
-		go helloWorker(requests)
-	}
+func helloBroker() chan helloRequest {
+	requests := make(chan helloRequest)
+	go func() {
+		for i := 0; i < 1000; i++ {
+			go helloWorker(requests)
+		}
+	}()
+	return requests
 }
 
 func helloWorker(requests chan helloRequest) {
