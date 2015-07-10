@@ -26,7 +26,7 @@ func newHelloRequest(name string) helloRequest {
 
 func lotsOfHelloClients(requests chan helloRequest) {
 	var done sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10000; i++ {
 		done.Add(1)
 		go func() {
 			defer done.Done()
