@@ -1,18 +1,14 @@
 package main
 
-import (
-	"fmt"
-	"sync"
-)
+import "fmt"
 
 func main() {
-	var done sync.WaitGroup
-	done.Add(1)
+	done := make(chan bool)
 	go func() {
-		defer done.Done()
 		hello()
+		done <- true
 	}()
-	done.Wait()
+	<-done
 }
 
 func hello() {
