@@ -7,8 +7,7 @@ func main() {
 	go func() {
 		hellos <- hello()
 	}()
-	hello := <-hellos
-	fmt.Println(hello)
+	fmt.Println(<-hellos)
 }
 
 func hello() string {
