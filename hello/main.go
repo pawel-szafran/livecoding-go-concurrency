@@ -29,16 +29,16 @@ func lotsOfHelloClients(requests chan helloRequest) {
 	var done sync.WaitGroup
 	for i := 0; i < 10000; i++ {
 		done.Add(1)
-		go func() {
+		go func(id int) {
 			defer done.Done()
-			helloClient(requests)
-		}()
+			helloClient(id, requests)
+		}(i)
 	}
 	done.Wait()
 }
 
-func helloClient(requests chan helloRequest) {
-	request := newHelloRequest("Client")
+func helloClient(id int, requests chan helloRequest) {
+	request := newHelloRequest(fmt.Sprint("Client-", id))
 	requests <- request
 	fmt.Println(<-request.response)
 }
