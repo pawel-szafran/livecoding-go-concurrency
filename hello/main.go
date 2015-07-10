@@ -3,16 +3,14 @@ package main
 import "fmt"
 
 func main() {
-	done := make(chan bool)
+	hellos := make(chan string)
 	go func() {
-		defer func() {
-			done <- true
-		}()
-		hello()
+		hellos <- hello()
 	}()
-	<-done
+	hello := <-hellos
+	fmt.Println(hello)
 }
 
-func hello() {
-	fmt.Println("Hello Go :)")
+func hello() string {
+	return "Hello Go :)"
 }
