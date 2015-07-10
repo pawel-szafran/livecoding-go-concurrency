@@ -6,11 +6,14 @@ import (
 )
 
 func main() {
-	hellos := make(chan string)
+	requests := make(chan chan string)
 	go func() {
-		hellos <- hello()
+		response := <-requests
+		response <- hello()
 	}()
-	fmt.Println(<-hellos)
+	response := make(chan string)
+	requests <- response
+	fmt.Println(<-response)
 }
 
 func hello() string {
