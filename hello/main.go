@@ -24,7 +24,7 @@ func newHelloRequest(name string) helloRequest {
 	return helloRequest{name, make(chan string)}
 }
 
-func lotsOfHelloClients(requests chan helloRequest) {
+func lotsOfHelloClients(requests chan<- helloRequest) {
 	var done sync.WaitGroup
 	for i := 0; i < 10000; i++ {
 		done.Add(1)
@@ -36,13 +36,13 @@ func lotsOfHelloClients(requests chan helloRequest) {
 	done.Wait()
 }
 
-func helloClient(id int, requests chan helloRequest) {
+func helloClient(id int, requests chan<- helloRequest) {
 	request := newHelloRequest(fmt.Sprint("Client-", id))
 	requests <- request
 	fmt.Println(<-request.response)
 }
 
-func helloBroker() chan helloRequest {
+func helloBroker() chan<- helloRequest {
 	requests := make(chan helloRequest)
 	go func() {
 		for i := 0; i < 1000; i++ {
@@ -52,7 +52,7 @@ func helloBroker() chan helloRequest {
 	return requests
 }
 
-func helloWorker(requests chan helloRequest) {
+func helloWorker(requests <-chan helloRequest) {
 	for request := range requests {
 		request.response <- hello(request.name)
 	}
