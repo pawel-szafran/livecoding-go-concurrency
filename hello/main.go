@@ -8,6 +8,10 @@ import (
 func main() {
 	requests := make(chan chan string)
 	go helloWorker(requests)
+	helloClient(requests)
+}
+
+func helloClient(requests chan chan string) {
 	response := make(chan string)
 	requests <- response
 	fmt.Println(<-response)
