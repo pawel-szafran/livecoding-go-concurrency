@@ -2,12 +2,17 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"sync"
 )
 
 func main() {
-	go hello()
-	time.Sleep(time.Second)
+	var done sync.WaitGroup
+	done.Add(1)
+	go func() {
+		hello()
+		done.Done()
+	}()
+	done.Wait()
 }
 
 func hello() {
