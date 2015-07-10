@@ -6,9 +6,12 @@ import (
 )
 
 func main() {
+	start := time.Now()
 	requests := make(chan helloRequest)
 	go helloBroker(requests)
 	helloClient(requests)
+	elapsed := time.Since(start)
+	fmt.Println("Elapsed:", elapsed)
 }
 
 type helloRequest struct {
