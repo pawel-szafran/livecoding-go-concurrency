@@ -11,6 +11,7 @@ func main() {
 	requests := make(chan helloRequest)
 	go helloBroker(requests)
 	lotsOfHelloClients(requests)
+	close(requests)
 	elapsed := time.Since(start)
 	fmt.Println("Elapsed:", elapsed)
 }
@@ -49,8 +50,7 @@ func helloBroker(requests chan helloRequest) {
 }
 
 func helloWorker(requests chan helloRequest) {
-	for {
-		request := <-requests
+	for request := range requests {
 		request.response <- hello(request.name)
 	}
 }
