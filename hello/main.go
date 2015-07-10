@@ -6,27 +6,36 @@ import (
 )
 
 func main() {
-	requests := make(chan chan string)
+	requests := make(chan helloRequest)
 	go helloBroker(requests)
 	helloClient(requests)
 }
 
-func helloClient(requests chan chan string) {
-	response := make(chan string)
-	requests <- response
-	fmt.Println(<-response)
+type helloRequest struct {
+	name     string
+	response chan string
 }
 
-func helloBroker(requests chan chan string) {
+func newHelloRequest(name string) helloRequest {
+	return helloRequest{name, make(chan string)}
+}
+
+func helloClient(requests chan helloRequest) {
+	request := newHelloRequest("Client")
+	requests <- request
+	fmt.Println(<-request.response)
+}
+
+func helloBroker(requests chan helloRequest) {
 	go helloWorker(requests)
 }
 
-func helloWorker(requests chan chan string) {
-	response := <-requests
-	response <- hello()
+func helloWorker(requests chan helloRequest) {
+	request := <-requests
+	request.response <- hello(request.name)
 }
 
-func hello() string {
+func hello(name string) string {
 	time.Sleep(50 * time.Millisecond)
-	return "Hello Go :)"
+	return fmt.Sprint("Hello ", name, " :)")
 }
