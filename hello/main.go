@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func main() {
 	hellos := make(chan string)
@@ -11,5 +14,6 @@ func main() {
 }
 
 func hello() string {
+	time.Sleep(50 * time.Millisecond)
 	return "Hello Go :)"
 }
