@@ -5,8 +5,10 @@ import "fmt"
 func main() {
 	done := make(chan bool)
 	go func() {
+		defer func() {
+			done <- true
+		}()
 		hello()
-		done <- true
 	}()
 	<-done
 }
