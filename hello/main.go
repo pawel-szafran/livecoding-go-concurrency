@@ -43,7 +43,9 @@ func helloClient(requests chan helloRequest) {
 }
 
 func helloBroker(requests chan helloRequest) {
-	go helloWorker(requests)
+	for i := 0; i < 1000; i++ {
+		go helloWorker(requests)
+	}
 }
 
 func helloWorker(requests chan helloRequest) {
