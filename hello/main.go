@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -9,7 +10,7 @@ func main() {
 	start := time.Now()
 	requests := make(chan helloRequest)
 	go helloBroker(requests)
-	helloClient(requests)
+	lotsOfHelloClients(requests)
 	elapsed := time.Since(start)
 	fmt.Println("Elapsed:", elapsed)
 }
@@ -23,6 +24,18 @@ func newHelloRequest(name string) helloRequest {
 	return helloRequest{name, make(chan string)}
 }
 
+func lotsOfHelloClients(requests chan helloRequest) {
+	var done sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		done.Add(1)
+		go func() {
+			defer done.Done()
+			helloClient(requests)
+		}()
+	}
+	done.Wait()
+}
+
 func helloClient(requests chan helloRequest) {
 	request := newHelloRequest("Client")
 	requests <- request
@@ -34,8 +47,10 @@ func helloBroker(requests chan helloRequest) {
 }
 
 func helloWorker(requests chan helloRequest) {
-	request := <-requests
-	request.response <- hello(request.name)
+	for {
+		request := <-requests
+		request.response <- hello(request.name)
+	}
 }
 
 func hello(name string) string {
