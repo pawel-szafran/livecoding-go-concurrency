@@ -9,8 +9,8 @@ func main() {
 	var done sync.WaitGroup
 	done.Add(1)
 	go func() {
+		defer done.Done()
 		hello()
-		done.Done()
 	}()
 	done.Wait()
 }
