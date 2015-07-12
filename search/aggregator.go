@@ -8,5 +8,9 @@ type Aggregator struct {
 }
 
 func (a *Aggregator) Search(query Query) Results {
-	return nil
+	results := Results{}
+	for searchType, search := range a.Searches {
+		results[searchType] = search(query)
+	}
+	return results
 }
