@@ -11,9 +11,15 @@ type Aggregator struct {
 }
 
 func (a *Aggregator) Search(query Query) Results {
-	resultChan := make(chan typedResult)
-	a.searchAll(query, resultChan)
-	return a.collectResults(resultChan)
+	req := a.newSearchRequest(query)
+	a.searchAll(req)
+	return a.collectResults(req)
+}
+
+type searchRequest struct {
+	query       Query
+	resultChan  chan typedResult
+	timeoutChan <-chan time.Time
 }
 
 type typedResult struct {
@@ -21,20 +27,32 @@ type typedResult struct {
 	result     Result
 }
 
-func (a *Aggregator) searchAll(query Query, resultChan chan typedResult) {
+func (a *Aggregator) newSearchRequest(query Query) *searchRequest {
+	return &searchRequest{
+		query:       query,
+		resultChan:  make(chan typedResult),
+		timeoutChan: time.After(a.Timeout),
+	}
+}
+
+func (a *Aggregator) searchAll(req *searchRequest) {
 	for searchType, search := range a.Searches {
 		searchType, search := searchType, search
 		go func() {
-			resultChan <- typedResult{searchType, search(query)}
+			req.resultChan <- typedResult{searchType, search(req.query)}
 		}()
 	}
 }
 
-func (a *Aggregator) collectResults(resultChan chan typedResult) Results {
-	results := Results{}
+func (a *Aggregator) collectResults(req *searchRequest) (results Results) {
+	results = Results{}
 	for i := 0; i < len(a.Searches); i++ {
-		result := <-resultChan
-		results[result.searchType] = result.result
+		select {
+		case result := <-req.resultChan:
+			results[result.searchType] = result.result
+		case <-req.timeoutChan:
+			return
+		}
 	}
-	return results
+	return
 }
