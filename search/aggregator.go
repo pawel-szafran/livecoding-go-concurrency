@@ -2,7 +2,8 @@ package search
 
 import "time"
 
-type Searches map[SearchType]Search
+type Searches map[SearchType]Replicas
+type Replicas []Search
 type Results map[SearchType]Result
 
 type Aggregator struct {
@@ -39,7 +40,7 @@ func (a *Aggregator) searchAll(req *searchRequest) {
 	for searchType, search := range a.Searches {
 		searchType, search := searchType, search
 		go func() {
-			req.resultChan <- typedResult{searchType, search(req.query)}
+			req.resultChan <- typedResult{searchType, search[0](req.query)}
 		}()
 	}
 }

@@ -15,8 +15,8 @@ var _ = Describe("Aggregator", func() {
 	It("aggregates results from all searches", func() {
 		aggregator := Aggregator{
 			Searches: Searches{
-				"Photos": fakeSearch("Photos"),
-				"Videos": fakeSearch("Videos"),
+				"Photos": Replicas{fakeSearch("Photos")},
+				"Videos": Replicas{fakeSearch("Videos")},
 			},
 			Timeout: time.Second,
 		}
@@ -30,8 +30,8 @@ var _ = Describe("Aggregator", func() {
 	It("aggregates results concurrently", func() {
 		aggregator := Aggregator{
 			Searches: Searches{
-				"Photos": fakeLongSearch("Photos", time.Millisecond),
-				"Videos": fakeLongSearch("Videos", time.Millisecond),
+				"Photos": Replicas{fakeLongSearch("Photos", time.Millisecond)},
+				"Videos": Replicas{fakeLongSearch("Videos", time.Millisecond)},
 			},
 			Timeout: time.Second,
 		}
@@ -43,8 +43,8 @@ var _ = Describe("Aggregator", func() {
 	It("has timeout and aggregates only ready results", func() {
 		aggregator := Aggregator{
 			Searches: Searches{
-				"Photos": fakeLongSearch("Photos", 3*time.Millisecond),
-				"Videos": fakeLongSearch("Videos", 1*time.Millisecond),
+				"Photos": Replicas{fakeLongSearch("Photos", 3*time.Millisecond)},
+				"Videos": Replicas{fakeLongSearch("Videos", 1*time.Millisecond)},
 			},
 			Timeout: 2 * time.Millisecond,
 		}
