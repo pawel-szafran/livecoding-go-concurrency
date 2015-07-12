@@ -13,8 +13,8 @@ var _ = Describe("Aggregator", func() {
 
 	It("aggregates results from all searches", func() {
 		aggregator := Aggregator{Searches{
-			"Photos": func(query Query) Result { return Result(fmt.Sprint("Photos result for ", query)) },
-			"Videos": func(query Query) Result { return Result(fmt.Sprint("Videos result for ", query)) },
+			"Photos": fakeSearch("Photos"),
+			"Videos": fakeSearch("Videos"),
 		}}
 		results := aggregator.Search("golang")
 		Expect(results).To(Equal(Results{
@@ -24,3 +24,9 @@ var _ = Describe("Aggregator", func() {
 	})
 
 })
+
+func fakeSearch(name string) Search {
+	return func(query Query) Result {
+		return Result(fmt.Sprint(name, " result for ", query))
+	}
+}
