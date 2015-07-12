@@ -37,12 +37,23 @@ func (a *Aggregator) newSearchRequest(query Query) *searchRequest {
 }
 
 func (a *Aggregator) searchAll(req *searchRequest) {
-	for searchType, search := range a.Searches {
-		searchType, search := searchType, search
+	for searchType, replicas := range a.Searches {
+		searchType, replicas := searchType, replicas
 		go func() {
-			req.resultChan <- typedResult{searchType, search[0](req.query)}
+			req.resultChan <- typedResult{searchType, replicas.firstResult(req.query)}
 		}()
 	}
+}
+
+func (replicas Replicas) firstResult(query Query) Result {
+	resultChan := make(chan Result)
+	for _, search := range replicas {
+		search := search
+		go func() {
+			resultChan <- search(query)
+		}()
+	}
+	return <-resultChan
 }
 
 func (a *Aggregator) collectResults(req *searchRequest) (results Results) {
