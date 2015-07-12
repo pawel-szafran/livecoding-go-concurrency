@@ -56,6 +56,30 @@ var _ = Describe("Aggregator", func() {
 		}))
 	})
 
+	It("uses replicas to minimize tail latency impact", func() {
+		aggregator := Aggregator{
+			Searches: Searches{
+				"Photos": Replicas{
+					fakeLongSearch("Photos1", 3*time.Millisecond),
+					fakeLongSearch("Photos2", 2*time.Millisecond),
+					fakeLongSearch("Photos3", 1*time.Millisecond),
+				},
+				"Videos": Replicas{
+					fakeLongSearch("Videos1", 1*time.Millisecond),
+					fakeLongSearch("Videos2", 3*time.Millisecond),
+				},
+			},
+			Timeout: time.Second,
+		}
+		start := time.Now()
+		results := aggregator.Search("golang")
+		Expect(time.Since(start)).To(BeNumerically("<", 2*time.Millisecond))
+		Expect(results).To(Equal(Results{
+			"Photos": "Photos3 result for golang",
+			"Videos": "Videos1 result for golang",
+		}))
+	})
+
 })
 
 func fakeSearch(name string) Search {
