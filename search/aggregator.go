@@ -1,10 +1,13 @@
 package search
 
+import "time"
+
 type Searches map[SearchType]Search
 type Results map[SearchType]Result
 
 type Aggregator struct {
 	Searches Searches
+	Timeout  time.Duration
 }
 
 func (a *Aggregator) Search(query Query) Results {

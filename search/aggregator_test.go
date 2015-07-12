@@ -13,10 +13,13 @@ import (
 var _ = Describe("Aggregator", func() {
 
 	It("aggregates results from all searches", func() {
-		aggregator := Aggregator{Searches{
-			"Photos": fakeSearch("Photos"),
-			"Videos": fakeSearch("Videos"),
-		}}
+		aggregator := Aggregator{
+			Searches: Searches{
+				"Photos": fakeSearch("Photos"),
+				"Videos": fakeSearch("Videos"),
+			},
+			Timeout: time.Second,
+		}
 		results := aggregator.Search("golang")
 		Expect(results).To(Equal(Results{
 			"Photos": "Photos result for golang",
@@ -25,13 +28,32 @@ var _ = Describe("Aggregator", func() {
 	})
 
 	It("aggregates results concurrently", func() {
-		aggregator := Aggregator{Searches{
-			"Photos": fakeLongSearch("Photos", time.Millisecond),
-			"Videos": fakeLongSearch("Videos", time.Millisecond),
-		}}
+		aggregator := Aggregator{
+			Searches: Searches{
+				"Photos": fakeLongSearch("Photos", time.Millisecond),
+				"Videos": fakeLongSearch("Videos", time.Millisecond),
+			},
+			Timeout: time.Second,
+		}
 		start := time.Now()
 		aggregator.Search("golang")
 		Expect(time.Since(start)).To(BeNumerically("<", 2*time.Millisecond))
+	})
+
+	It("has timeout and aggregates only ready results", func() {
+		aggregator := Aggregator{
+			Searches: Searches{
+				"Photos": fakeLongSearch("Photos", 3*time.Millisecond),
+				"Videos": fakeLongSearch("Videos", 1*time.Millisecond),
+			},
+			Timeout: 2 * time.Millisecond,
+		}
+		start := time.Now()
+		results := aggregator.Search("golang")
+		Expect(time.Since(start)).To(BeNumerically("<", 3*time.Millisecond))
+		Expect(results).To(Equal(Results{
+			"Videos": "Videos result for golang",
+		}))
 	})
 
 })
