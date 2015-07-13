@@ -103,6 +103,28 @@ var _ = Describe("Aggregator", func() {
 		}
 	})
 
+	It("doesn't leak goroutines", func() {
+		aggregator := Aggregator{
+			Searches: Searches{
+				"Photos": Replicas{
+					fakeLongSearch("Photos1", 2*time.Millisecond),
+					fakeLongSearch("Photos2", 1*time.Millisecond),
+				},
+				"Videos": Replicas{
+					fakeLongSearch("Videos1", 4*time.Millisecond),
+				},
+			},
+			Timeout: 3 * time.Millisecond,
+		}
+		before := runtime.NumGoroutine()
+		for i := 0; i < 20; i++ {
+			aggregator.Search("golang")
+		}
+		time.Sleep(3 * time.Millisecond)
+		left := runtime.NumGoroutine() - before
+		Expect(left).To(BeNumerically("<", 5))
+	})
+
 })
 
 func fakeSearch(name string) Search {
