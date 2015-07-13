@@ -46,7 +46,7 @@ func (a *Aggregator) searchAll(req *searchRequest) {
 }
 
 func (replicas Replicas) firstResult(query Query) Result {
-	resultChan := make(chan Result)
+	resultChan := make(chan Result, len(replicas))
 	for _, search := range replicas {
 		search := search
 		go func() {
