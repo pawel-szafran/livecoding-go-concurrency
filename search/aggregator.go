@@ -31,7 +31,7 @@ type typedResult struct {
 func (a *Aggregator) newSearchRequest(query Query) *searchRequest {
 	return &searchRequest{
 		query:       query,
-		resultChan:  make(chan typedResult),
+		resultChan:  make(chan typedResult, len(a.Searches)),
 		timeoutChan: time.After(a.Timeout),
 	}
 }
