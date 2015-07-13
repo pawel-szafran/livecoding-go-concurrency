@@ -2,6 +2,7 @@ package search_test
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 
 	. "github.com/pawel-szafran/livecoding-go-concurrency/search"
@@ -78,6 +79,28 @@ var _ = Describe("Aggregator", func() {
 			"Photos": "Photos3 result for golang",
 			"Videos": "Videos1 result for golang",
 		}))
+	})
+
+	It("leaks goroutines... see output :/", func() {
+		aggregator := Aggregator{
+			Searches: Searches{
+				"Photos": Replicas{
+					fakeLongSearch("Photos1", 2*time.Millisecond),
+					fakeLongSearch("Photos2", 1*time.Millisecond),
+				},
+				"Videos": Replicas{
+					fakeLongSearch("Videos1", 4*time.Millisecond),
+				},
+			},
+			Timeout: 3 * time.Millisecond,
+		}
+		fmt.Println("Goroutines:", runtime.NumGoroutine())
+		for i := 1; i <= 1000; i++ {
+			aggregator.Search("golang")
+			if i%10 == 0 {
+				fmt.Println("Goroutines:", runtime.NumGoroutine())
+			}
+		}
 	})
 
 })
