@@ -18,9 +18,7 @@ var _ = Describe("Aggregator", func() {
 			Searches: Searches{
 				"Photos": Replicas{fakeSearch("Photos")},
 				"Videos": Replicas{fakeSearch("Videos")},
-			},
-			Timeout: time.Second,
-		}
+			}}
 		results := aggregator.Search("golang")
 		Expect(results).To(Equal(Results{
 			"Photos": "Photos result for golang",
@@ -33,9 +31,7 @@ var _ = Describe("Aggregator", func() {
 			Searches: Searches{
 				"Photos": Replicas{fakeLongSearch("Photos", time.Millisecond)},
 				"Videos": Replicas{fakeLongSearch("Videos", time.Millisecond)},
-			},
-			Timeout: time.Second,
-		}
+			}}
 		start := time.Now()
 		aggregator.Search("golang")
 		Expect(time.Since(start)).To(BeNumerically("<", 2*time.Millisecond))
@@ -69,9 +65,7 @@ var _ = Describe("Aggregator", func() {
 					fakeLongSearch("Videos1", 1*time.Millisecond),
 					fakeLongSearch("Videos2", 3*time.Millisecond),
 				},
-			},
-			Timeout: time.Second,
-		}
+			}}
 		start := time.Now()
 		results := aggregator.Search("golang")
 		Expect(time.Since(start)).To(BeNumerically("<", 2*time.Millisecond))

@@ -32,8 +32,15 @@ func (a *Aggregator) newSearchRequest(query Query) *searchRequest {
 	return &searchRequest{
 		query:       query,
 		resultChan:  make(chan typedResult, len(a.Searches)),
-		timeoutChan: time.After(a.Timeout),
+		timeoutChan: newTimeoutChan(a.Timeout),
 	}
+}
+
+func newTimeoutChan(timeout time.Duration) <-chan time.Time {
+	if timeout <= 0 {
+		return nil
+	}
+	return time.After(timeout)
 }
 
 func (a *Aggregator) searchAll(req *searchRequest) {
