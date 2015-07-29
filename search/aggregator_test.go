@@ -13,11 +13,11 @@ import (
 
 var _ = Describe("Aggregator", func() {
 
-	It("aggregates results from all searches", func() {
+	It("aggregates results from all engines", func() {
 		aggregator := Aggregator{
-			Searches: Searches{
-				"Photos": Replicas{fakeSearch("Photos")},
-				"Videos": Replicas{fakeSearch("Videos")},
+			Engines: Engines{
+				"Photos": Replicas{fakeEngine("Photos")},
+				"Videos": Replicas{fakeEngine("Videos")},
 			}}
 		results := aggregator.Search("golang")
 		Expect(results).To(Equal(Results{
@@ -28,9 +28,9 @@ var _ = Describe("Aggregator", func() {
 
 	It("aggregates results concurrently", func() {
 		aggregator := Aggregator{
-			Searches: Searches{
-				"Photos": Replicas{fakeLongSearch("Photos", time.Millisecond)},
-				"Videos": Replicas{fakeLongSearch("Videos", time.Millisecond)},
+			Engines: Engines{
+				"Photos": Replicas{fakeSlowEngine("Photos", time.Millisecond)},
+				"Videos": Replicas{fakeSlowEngine("Videos", time.Millisecond)},
 			}}
 		start := time.Now()
 		aggregator.Search("golang")
@@ -39,9 +39,9 @@ var _ = Describe("Aggregator", func() {
 
 	It("has timeout and aggregates only ready results", func() {
 		aggregator := Aggregator{
-			Searches: Searches{
-				"Photos": Replicas{fakeLongSearch("Photos", 3*time.Millisecond)},
-				"Videos": Replicas{fakeLongSearch("Videos", 1*time.Millisecond)},
+			Engines: Engines{
+				"Photos": Replicas{fakeSlowEngine("Photos", 3*time.Millisecond)},
+				"Videos": Replicas{fakeSlowEngine("Videos", 1*time.Millisecond)},
 			},
 			Timeout: 2 * time.Millisecond,
 		}
@@ -55,15 +55,15 @@ var _ = Describe("Aggregator", func() {
 
 	It("uses replicas to minimize tail latency impact", func() {
 		aggregator := Aggregator{
-			Searches: Searches{
+			Engines: Engines{
 				"Photos": Replicas{
-					fakeLongSearch("Photos1", 3*time.Millisecond),
-					fakeLongSearch("Photos2", 2*time.Millisecond),
-					fakeLongSearch("Photos3", 1*time.Millisecond),
+					fakeSlowEngine("Photos1", 3*time.Millisecond),
+					fakeSlowEngine("Photos2", 2*time.Millisecond),
+					fakeSlowEngine("Photos3", 1*time.Millisecond),
 				},
 				"Videos": Replicas{
-					fakeLongSearch("Videos1", 1*time.Millisecond),
-					fakeLongSearch("Videos2", 3*time.Millisecond),
+					fakeSlowEngine("Videos1", 1*time.Millisecond),
+					fakeSlowEngine("Videos2", 3*time.Millisecond),
 				},
 			}}
 		start := time.Now()
@@ -77,13 +77,13 @@ var _ = Describe("Aggregator", func() {
 
 	It("doesn't leak goroutines", func() {
 		aggregator := Aggregator{
-			Searches: Searches{
+			Engines: Engines{
 				"Photos": Replicas{
-					fakeLongSearch("Photos1", 2*time.Millisecond),
-					fakeLongSearch("Photos2", 1*time.Millisecond),
+					fakeSlowEngine("Photos1", 2*time.Millisecond),
+					fakeSlowEngine("Photos2", 1*time.Millisecond),
 				},
 				"Videos": Replicas{
-					fakeLongSearch("Videos1", 4*time.Millisecond),
+					fakeSlowEngine("Videos1", 4*time.Millisecond),
 				},
 			},
 			Timeout: 3 * time.Millisecond,
@@ -99,15 +99,15 @@ var _ = Describe("Aggregator", func() {
 
 })
 
-func fakeSearch(name string) Search {
+func fakeEngine(name string) Engine {
 	return func(query Query) Result {
 		return Result(fmt.Sprint(name, " result for ", query))
 	}
 }
 
-func fakeLongSearch(name string, duration time.Duration) Search {
+func fakeSlowEngine(name string, duration time.Duration) Engine {
 	return func(query Query) Result {
 		time.Sleep(duration)
-		return fakeSearch(name)(query)
+		return fakeEngine(name)(query)
 	}
 }

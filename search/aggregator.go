@@ -2,13 +2,13 @@ package search
 
 import "time"
 
-type Searches map[SearchType]Replicas
-type Replicas []Search
-type Results map[SearchType]Result
+type Engines map[Type]Replicas
+type Replicas []Engine
+type Results map[Type]Result
 
 type Aggregator struct {
-	Searches Searches
-	Timeout  time.Duration
+	Engines Engines
+	Timeout time.Duration
 }
 
 func (a *Aggregator) Search(query Query) Results {
@@ -24,14 +24,14 @@ type searchRequest struct {
 }
 
 type typedResult struct {
-	searchType SearchType
-	result     Result
+	Type   Type
+	Result Result
 }
 
 func (a *Aggregator) newSearchRequest(query Query) *searchRequest {
 	return &searchRequest{
 		query:       query,
-		resultChan:  make(chan typedResult, len(a.Searches)),
+		resultChan:  make(chan typedResult, len(a.Engines)),
 		timeoutChan: newTimeoutChan(a.Timeout),
 	}
 }
@@ -44,31 +44,29 @@ func newTimeoutChan(timeout time.Duration) <-chan time.Time {
 }
 
 func (a *Aggregator) searchAll(req *searchRequest) {
-	for searchType, replicas := range a.Searches {
-		searchType, replicas := searchType, replicas
+	for t, replicas := range a.Engines {
+		t, replicas := t, replicas
 		go func() {
-			req.resultChan <- typedResult{searchType, replicas.firstResult(req.query)}
+			req.resultChan <- typedResult{t, replicas.firstResult(req.query)}
 		}()
 	}
 }
 
 func (replicas Replicas) firstResult(query Query) Result {
 	resultChan := make(chan Result, len(replicas))
-	for _, search := range replicas {
-		search := search
-		go func() {
-			resultChan <- search(query)
-		}()
+	for _, engine := range replicas {
+		engine := engine
+		go func() { resultChan <- engine(query) }()
 	}
 	return <-resultChan
 }
 
 func (a *Aggregator) collectResults(req *searchRequest) (results Results) {
 	results = Results{}
-	for i := 0; i < len(a.Searches); i++ {
+	for i := 0; i < len(a.Engines); i++ {
 		select {
-		case result := <-req.resultChan:
-			results[result.searchType] = result.result
+		case r := <-req.resultChan:
+			results[r.Type] = r.Result
 		case <-req.timeoutChan:
 			return
 		}
