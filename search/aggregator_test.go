@@ -57,25 +57,26 @@ var _ = Describe("Aggregator", func() {
 	})
 
 	It("uses replicas to minimize tail latency impact", func() {
+		slowEnginesSyncer := NewSyncer()
 		aggregator := Aggregator{
 			Engines: Engines{
 				"Photos": Replicas{
-					fakeSlowEngine("Photos1", 3*time.Millisecond),
-					fakeSlowEngine("Photos2", 2*time.Millisecond),
-					fakeSlowEngine("Photos3", 1*time.Millisecond),
+					fakeSyncedEngine("Photos1", slowEnginesSyncer),
+					fakeSyncedEngine("Photos2", slowEnginesSyncer),
+					fakeEngine("Photos3"),
 				},
 				"Videos": Replicas{
-					fakeSlowEngine("Videos1", 1*time.Millisecond),
-					fakeSlowEngine("Videos2", 3*time.Millisecond),
+					fakeEngine("Videos1"),
+					fakeSyncedEngine("Videos2", slowEnginesSyncer),
 				},
 			}}
-		start := time.Now()
-		results := aggregator.Search("golang")
-		Expect(time.Since(start)).To(BeNumerically("<", 2*time.Millisecond))
-		Expect(results).To(Equal(Results{
+		results := make(chan Results)
+		go func() { results <- aggregator.Search("golang") }()
+		Eventually(results).Should(Receive(Equal(Results{
 			"Photos": "Photos3 result for golang",
 			"Videos": "Videos1 result for golang",
-		}))
+		})))
+		slowEnginesSyncer.LetAllRun()
 	})
 
 	It("doesn't leak goroutines", func() {
