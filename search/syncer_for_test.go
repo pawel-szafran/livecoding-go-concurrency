@@ -30,5 +30,7 @@ func (s *Syncer) WaitForAllReady() *Syncer {
 }
 
 func (s *Syncer) LetAllRun() {
-	close(s.run)
+	for i := 0; i < s.goroutines; i++ {
+		s.run <- true
+	}
 }

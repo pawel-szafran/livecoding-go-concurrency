@@ -79,26 +79,29 @@ var _ = Describe("Aggregator", func() {
 		slowEnginesSyncer.LetAllRun()
 	})
 
-	It("doesn't leak goroutines", func() {
+	It("doesn't leak goroutines 2", func() {
+		slowEnginesSyncer := NewSyncer()
 		aggregator := Aggregator{
 			Engines: Engines{
 				"Photos": Replicas{
-					fakeSlowEngine("Photos1", 2*time.Millisecond),
-					fakeSlowEngine("Photos2", 1*time.Millisecond),
+					fakeEngine("Photos1"),
+					fakeSyncedEngine("Photos2", slowEnginesSyncer),
+					fakeEngine("Photos3"),
 				},
 				"Videos": Replicas{
-					fakeSlowEngine("Videos1", 4*time.Millisecond),
+					fakeSyncedEngine("Videos1", slowEnginesSyncer),
 				},
 			},
-			Timeout: 3 * time.Millisecond,
+			Timeout: time.Millisecond,
 		}
 		before := runtime.NumGoroutine()
-		for i := 0; i < 20; i++ {
+		for i := 0; i < 10; i++ {
 			aggregator.Search("golang")
+			slowEnginesSyncer.LetAllRun()
 		}
-		time.Sleep(3 * time.Millisecond)
+		time.Sleep(2 * time.Millisecond)
 		left := runtime.NumGoroutine() - before
-		Expect(left).To(BeNumerically("<", 5))
+		Expect(left).To(BeNumerically("<", 3))
 	})
 
 })
@@ -113,13 +116,6 @@ func fakeSyncedEngine(name string, syncer *Syncer) Engine {
 	syncer.Register()
 	return func(query Query) Result {
 		syncer.Sync()
-		return fakeEngine(name)(query)
-	}
-}
-
-func fakeSlowEngine(name string, duration time.Duration) Engine {
-	return func(query Query) Result {
-		time.Sleep(duration)
 		return fakeEngine(name)(query)
 	}
 }
