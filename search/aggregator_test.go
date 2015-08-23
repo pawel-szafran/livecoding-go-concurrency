@@ -27,32 +27,33 @@ var _ = Describe("Aggregator", func() {
 	})
 
 	It("aggregates results concurrently", func() {
-		engineSyncer := NewSyncer()
+		enginesSyncer := NewSyncer()
 		aggregator := Aggregator{
 			Engines: Engines{
-				"Photos": Replicas{fakeSyncedEngine("Photos", engineSyncer)},
-				"Videos": Replicas{fakeSyncedEngine("Videos", engineSyncer)},
+				"Photos": Replicas{fakeSyncedEngine("Photos", enginesSyncer)},
+				"Videos": Replicas{fakeSyncedEngine("Videos", enginesSyncer)},
 			}}
-		go func() { engineSyncer.WaitForAllReady().LetAllRun() }()
+		go func() { enginesSyncer.WaitForAllReady().LetAllRun() }()
 		results := make(chan Results)
 		go func() { results <- aggregator.Search("golang") }()
 		Eventually(results).Should(Receive())
 	})
 
 	It("has timeout and aggregates only ready results", func() {
+		slowEnginesSyncer := NewSyncer()
 		aggregator := Aggregator{
 			Engines: Engines{
-				"Photos": Replicas{fakeSlowEngine("Photos", 3*time.Millisecond)},
-				"Videos": Replicas{fakeSlowEngine("Videos", 1*time.Millisecond)},
+				"Photos": Replicas{fakeSyncedEngine("Photos", slowEnginesSyncer)},
+				"Videos": Replicas{fakeEngine("Videos")},
 			},
-			Timeout: 2 * time.Millisecond,
+			Timeout: 10 * time.Millisecond,
 		}
-		start := time.Now()
-		results := aggregator.Search("golang")
-		Expect(time.Since(start)).To(BeNumerically("<", 3*time.Millisecond))
-		Expect(results).To(Equal(Results{
+		results := make(chan Results)
+		go func() { results <- aggregator.Search("golang") }()
+		Eventually(results).Should(Receive(Equal(Results{
 			"Videos": "Videos result for golang",
-		}))
+		})))
+		slowEnginesSyncer.LetAllRun()
 	})
 
 	It("uses replicas to minimize tail latency impact", func() {
