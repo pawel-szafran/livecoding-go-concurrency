@@ -27,14 +27,16 @@ var _ = Describe("Aggregator", func() {
 	})
 
 	It("aggregates results concurrently", func() {
+		engineSyncer := NewSyncer()
 		aggregator := Aggregator{
 			Engines: Engines{
-				"Photos": Replicas{fakeSlowEngine("Photos", time.Millisecond)},
-				"Videos": Replicas{fakeSlowEngine("Videos", time.Millisecond)},
+				"Photos": Replicas{fakeSyncedEngine("Photos", engineSyncer)},
+				"Videos": Replicas{fakeSyncedEngine("Videos", engineSyncer)},
 			}}
-		start := time.Now()
-		aggregator.Search("golang")
-		Expect(time.Since(start)).To(BeNumerically("<", 2*time.Millisecond))
+		go func() { engineSyncer.WaitForAllReady().LetAllRun() }()
+		results := make(chan Results)
+		go func() { results <- aggregator.Search("golang") }()
+		Eventually(results).Should(Receive())
 	})
 
 	It("has timeout and aggregates only ready results", func() {
@@ -102,6 +104,14 @@ var _ = Describe("Aggregator", func() {
 func fakeEngine(name string) Engine {
 	return func(query Query) Result {
 		return Result(fmt.Sprint(name, " result for ", query))
+	}
+}
+
+func fakeSyncedEngine(name string, syncer *Syncer) Engine {
+	syncer.Register()
+	return func(query Query) Result {
+		syncer.Sync()
+		return fakeEngine(name)(query)
 	}
 }
 
