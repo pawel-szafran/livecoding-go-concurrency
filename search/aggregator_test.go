@@ -79,7 +79,7 @@ var _ = Describe("Aggregator", func() {
 		slowEnginesSyncer.LetAllRun()
 	})
 
-	It("doesn't leak goroutines 2", func() {
+	It("doesn't leak goroutines", func() {
 		slowEnginesSyncer := NewSyncer()
 		aggregator := Aggregator{
 			Engines: Engines{
