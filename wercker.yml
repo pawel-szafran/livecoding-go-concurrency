@@ -1,0 +1,16 @@
+box: golang:1.7
+
+build:
+  steps:
+    - setup-go-workspace:
+        package-dir: github.com/pawel-szafran/livecoding-go-concurrency
+    - glide-install
+    - script:
+        name: set pkgs
+        code: export pkgs=$(go list ./... | grep -v /vendor/)
+    - script:
+        name: go build
+        code: go build ${pkgs}
+    - script:
+        name: go test
+        code: go test ${pkgs}

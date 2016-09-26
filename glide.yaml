@@ -1,0 +1,5 @@
+package: github.com/pawel-szafran/livecoding-go-concurrency
+import: []
+testImport:
+- package: github.com/onsi/ginkgo
+- package: github.com/onsi/gomega
