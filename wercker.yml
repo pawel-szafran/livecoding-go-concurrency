@@ -1,4 +1,4 @@
-box: golang:1.7
+box: golang:1.7.1
 
 build:
   steps:
